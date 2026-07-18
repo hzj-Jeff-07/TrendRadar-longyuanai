@@ -80,7 +80,7 @@ class AIFilterPipeline:
         effective_interests_file = configured_interests or "ai_interests.txt"
 
         if self._debug:
-            print(f"[AI筛选][DEBUG] === 配置信息 ===")
+            print("[AI筛选][DEBUG] === 配置信息 ===")
             print(f"[AI筛选][DEBUG] 存储后端: {self.storage.backend_name}")
             print(f"[AI筛选][DEBUG] batch_size={filter_config.get('BATCH_SIZE', 200)}, "
                   f"batch_interval={filter_config.get('BATCH_INTERVAL', 5)}")
@@ -158,7 +158,7 @@ class AIFilterPipeline:
         all_results = self.storage.get_active_ai_filter_results(interests_file=effective_interests_file)
 
         if self._debug:
-            print(f"[AI筛选][DEBUG] === 最终汇总 ===")
+            print("[AI筛选][DEBUG] === 最终汇总 ===")
             print(f"[AI筛选][DEBUG] 数据库 active 分类结果: {len(all_results)} 条")
             tag_counts: dict = {}
             for r in all_results:
@@ -198,7 +198,7 @@ class AIFilterPipeline:
         update_result = ai_filter.update_tags(old_tags, interests_content)
 
         if update_result is None:
-            print(f"[AI筛选] AI 标签更新失败，回退到重新提取")
+            print("[AI筛选] AI 标签更新失败，回退到重新提取")
             tags_data = ai_filter.extract_tags(interests_content)
             if not tags_data:
                 self.storage.end_batch()

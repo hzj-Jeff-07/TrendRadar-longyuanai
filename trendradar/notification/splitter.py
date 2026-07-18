@@ -70,11 +70,20 @@ def _safe_append_batch(
         return
 
     split_batches = _split_content_by_lines(content, footer, max_bytes, base_header)
-    if split_batches:
-        batches.extend(split_batches)
-    else:
-        # 极端情况：单行就超限，强制截断
+    if not split_batches:
         batches.append(truncate_at_line_boundary(full, max_bytes))
+        return
+
+    footer_size = len(footer.encode("utf-8"))
+    for batch in split_batches:
+        if len(batch.encode("utf-8")) > max_bytes:
+            # 极端情况：单行就超限，截断正文并保留 footer
+            if footer and batch.endswith(footer) and max_bytes > footer_size:
+                body = batch[: len(batch) - len(footer)]
+                batch = truncate_at_line_boundary(body, max_bytes - footer_size) + footer
+            else:
+                batch = truncate_at_line_boundary(batch, max_bytes)
+        batches.append(batch)
 
 
 def _safe_new_batch(
@@ -592,17 +601,17 @@ def split_content_into_batches(
             if i < len(report_data["stats"]) - 1:
                 separator = ""
                 if format_type in ("wework", "bark"):
-                    separator = f"\n\n\n\n"
+                    separator = "\n\n\n\n"
                 elif format_type == "telegram":
-                    separator = f"\n\n"
+                    separator = "\n\n"
                 elif format_type == "ntfy":
-                    separator = f"\n\n"
+                    separator = "\n\n"
                 elif format_type == "feishu":
                     separator = f"\n{feishu_separator}\n\n"
                 elif format_type == "dingtalk":
-                    separator = f"\n---\n\n"
+                    separator = "\n---\n\n"
                 elif format_type == "slack":
-                    separator = f"\n\n"
+                    separator = "\n\n"
 
                 test_content = current_batch + separator
                 if (
@@ -822,8 +831,6 @@ def split_content_into_batches(
 
             # AI 内容可能很长，按行拆分成多个批次
             footer_size = len(base_footer.encode("utf-8"))
-            header_size = len(base_header.encode("utf-8"))
-            available = max_bytes - footer_size - header_size
 
             ai_lines = ai_content.split("\n")
             current_batch = base_header
@@ -936,15 +943,15 @@ def split_content_into_batches(
     if report_data["failed_ids"]:
         failed_header = ""
         if format_type == "wework":
-            failed_header = f"\n\n\n\n⚠️ **数据获取失败的平台：**\n\n"
+            failed_header = "\n\n\n\n⚠️ **数据获取失败的平台：**\n\n"
         elif format_type == "telegram":
-            failed_header = f"\n\n⚠️ 数据获取失败的平台：\n\n"
+            failed_header = "\n\n⚠️ 数据获取失败的平台：\n\n"
         elif format_type == "ntfy":
-            failed_header = f"\n\n⚠️ **数据获取失败的平台：**\n\n"
+            failed_header = "\n\n⚠️ **数据获取失败的平台：**\n\n"
         elif format_type == "feishu":
             failed_header = f"\n{feishu_separator}\n\n⚠️ **数据获取失败的平台：**\n\n"
         elif format_type == "dingtalk":
-            failed_header = f"\n---\n\n⚠️ **数据获取失败的平台：**\n\n"
+            failed_header = "\n---\n\n⚠️ **数据获取失败的平台：**\n\n"
 
         test_content = current_batch + failed_header
         if (

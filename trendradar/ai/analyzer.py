@@ -136,7 +136,7 @@ class AIAnalyzer:
         print(f"[AI] Key : {masked_key}")
 
         if api_base:
-            print(f"[AI] 接口: 存在自定义 API 端点")
+            print("[AI] 接口: 存在自定义 API 端点")
 
         timeout = self.ai_config.get("TIMEOUT", 120)
         max_tokens = self.ai_config.get("MAX_TOKENS", 5000)
@@ -209,7 +209,7 @@ class AIAnalyzer:
 
             # JSON 解析失败时的重试兜底（仅重试一次）
             if result.error and "JSON 解析错误" in result.error:
-                print(f"[AI] JSON 解析失败，尝试让 AI 修复...")
+                print("[AI] JSON 解析失败，尝试让 AI 修复...")
                 retry_result = self._retry_fix_json(response, result.error)
                 if retry_result and retry_result.success and not retry_result.error:
                     print("[AI] JSON 修复成功")

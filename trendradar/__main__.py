@@ -436,7 +436,7 @@ class NewsAnalyzer:
             print(f"[AI] 分析出错 ({error_type}): {error_msg}")
             # 详细错误日志到 stderr
             import sys
-            print(f"[AI] 详细错误堆栈:", file=sys.stderr)
+            print("[AI] 详细错误堆栈:", file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
             return AIAnalysisResult(success=False, error=f"{error_type}: {error_msg}")
 
@@ -1071,12 +1071,12 @@ class NewsAnalyzer:
 
             # 保存到存储后端
             if self.storage_manager.save_rss_data(rss_data):
-                print(f"[RSS] 数据已保存到存储后端")
+                print("[RSS] 数据已保存到存储后端")
 
                 # 处理 RSS 数据（按模式过滤）并返回用于合并推送
                 return self._process_rss_data_by_mode(rss_data)
             else:
-                print(f"[RSS] 数据保存失败")
+                print("[RSS] 数据保存失败")
                 return None, None, None, set()
 
         except ImportError as e:

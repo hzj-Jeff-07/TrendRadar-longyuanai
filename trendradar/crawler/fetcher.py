@@ -47,6 +47,9 @@ class DataFetcher:
         """
         self.proxy_url = proxy_url
         self.api_url = api_url or self.DEFAULT_API_URL
+        # 复用 TCP/TLS 连接，避免批量爬取时每个请求重新握手
+        self.session = requests.Session()
+        self.session.headers.update(self.DEFAULT_HEADERS)
 
     @staticmethod
     def _check_domain_safety(
@@ -117,10 +120,9 @@ class DataFetcher:
         retries = 0
         while retries <= max_retries:
             try:
-                response = requests.get(
+                response = self.session.get(
                     url,
                     proxies=proxies,
-                    headers=self.DEFAULT_HEADERS,
                     timeout=10,
                 )
                 response.raise_for_status()
@@ -196,7 +198,7 @@ class DataFetcher:
                             print(f"   预期域名: https://*.{expected_domain}")
                             print(f"   异常来源: {bad_reason}")
                             print(f"   当前 API 地址: {self.api_url}")
-                            print(f"   该平台数据已丢弃，请检查 API 来源是否可信")
+                            print("   该平台数据已丢弃，请检查 API 来源是否可信")
                             failed_ids.append(id_value)
                             continue
 

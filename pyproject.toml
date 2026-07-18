@@ -21,7 +21,25 @@ trendradar = "trendradar.__main__:main"
 trendradar-mcp = "mcp_server.server:run_server"
 
 [dependency-groups]
-dev = []
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+# 先只启用可靠性检查（语法错误 + pyflakes），避免大规模格式化改动
+select = ["E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# __init__.py 中的导入用于 re-export
+"**/__init__.py" = ["F401"]
 
 [build-system]
 requires = ["hatchling"]
