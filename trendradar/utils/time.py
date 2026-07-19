@@ -10,6 +10,10 @@ from typing import Optional
 
 import pytz
 
+from trendradar.utils.log import get_logger
+
+logger = get_logger(__name__)
+
 # 默认时区常量 - 仅作为 fallback，正常运行时使用 config.yaml 中的 app.timezone
 DEFAULT_TIMEZONE = "Asia/Shanghai"
 
@@ -27,7 +31,7 @@ def get_configured_time(timezone: str = DEFAULT_TIMEZONE) -> datetime:
     try:
         tz = pytz.timezone(timezone)
     except pytz.UnknownTimeZoneError:
-        print(f"[警告] 未知时区 '{timezone}'，使用默认时区 {DEFAULT_TIMEZONE}")
+        logger.warning(f"[警告] 未知时区 '{timezone}'，使用默认时区 {DEFAULT_TIMEZONE}")
         tz = pytz.timezone(DEFAULT_TIMEZONE)
     return datetime.now(tz)
 
