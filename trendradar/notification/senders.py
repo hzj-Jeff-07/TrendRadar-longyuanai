@@ -31,6 +31,10 @@ import requests
 
 from .batch import add_batch_headers, get_max_batch_header_size
 from .formatters import convert_markdown_to_mrkdwn, strip_markdown
+from trendradar.utils.log import get_logger
+
+logger = get_logger(__name__)
+
 
 
 def _extract_ai_stats(ai_analysis) -> Optional[Dict]:
@@ -147,28 +151,28 @@ def _send_batches(
         全部批次发送成功返回 True
     """
     total = len(batches)
-    print(f"{log_prefix}消息分为 {total} 批次发送 [{report_type}]")
+    logger.info(f"{log_prefix}消息分为 {total} 批次发送 [{report_type}]")
 
     for i, batch_content in enumerate(batches, 1):
         if transform:
             batch_content = transform(batch_content)
 
         content_size = len(batch_content.encode("utf-8"))
-        print(f"发送{log_prefix}第 {i}/{total} 批次，大小：{content_size} 字节 [{report_type}]")
+        logger.info(f"发送{log_prefix}第 {i}/{total} 批次，大小：{content_size} 字节 [{report_type}]")
 
         try:
             ok, error_msg = send_one(batch_content)
             if not ok:
-                print(f"{log_prefix}第 {i}/{total} 批次发送失败 [{report_type}]，{error_msg}")
+                logger.warning(f"{log_prefix}第 {i}/{total} 批次发送失败 [{report_type}]，{error_msg}")
                 return False
-            print(f"{log_prefix}第 {i}/{total} 批次发送成功 [{report_type}]")
+            logger.info(f"{log_prefix}第 {i}/{total} 批次发送成功 [{report_type}]")
             if i < total:
                 time.sleep(batch_interval)
         except Exception as e:
-            print(f"{log_prefix}第 {i}/{total} 批次发送出错 [{report_type}]：{e}")
+            logger.warning(f"{log_prefix}第 {i}/{total} 批次发送出错 [{report_type}]：{e}")
             return False
 
-    print(f"{log_prefix}所有 {total} 批次发送完成 [{report_type}]")
+    logger.info(f"{log_prefix}所有 {total} 批次发送完成 [{report_type}]")
     return True
 
 
@@ -195,43 +199,43 @@ def _send_batches_reversed(
         至少一个批次成功返回 True，全部失败返回 False
     """
     total = len(batches)
-    print(f"{log_prefix}消息分为 {total} 批次发送 [{report_type}]")
-    print(f"{log_prefix}将按反向顺序推送（最后批次先推送），确保客户端显示顺序正确")
+    logger.info(f"{log_prefix}消息分为 {total} 批次发送 [{report_type}]")
+    logger.info(f"{log_prefix}将按反向顺序推送（最后批次先推送），确保客户端显示顺序正确")
 
     success_count = 0
     for idx, batch_content in enumerate(reversed(batches), 1):
         # 用户视角的批次编号
         actual_num = total - idx + 1
         content_size = len(batch_content.encode("utf-8"))
-        print(
+        logger.info(
             f"发送{log_prefix}第 {actual_num}/{total} 批次（推送顺序: {idx}/{total}），大小：{content_size} 字节 [{report_type}]"
         )
 
         # ntfy/Bark 均受 4KB 推送限制约束
         if content_size > 4096:
-            print(f"警告：{log_prefix}第 {actual_num}/{total} 批次消息过大（{content_size} 字节），可能被拒绝")
+            logger.warning(f"警告：{log_prefix}第 {actual_num}/{total} 批次消息过大（{content_size} 字节），可能被拒绝")
 
         try:
             if send_one(batch_content, actual_num):
-                print(f"{log_prefix}第 {actual_num}/{total} 批次发送成功 [{report_type}]")
+                logger.info(f"{log_prefix}第 {actual_num}/{total} 批次发送成功 [{report_type}]")
                 success_count += 1
                 if idx < total:
                     time.sleep(batch_interval)
         except requests.exceptions.ConnectTimeout:
-            print(f"{log_prefix}第 {actual_num}/{total} 批次连接超时 [{report_type}]")
+            logger.warning(f"{log_prefix}第 {actual_num}/{total} 批次连接超时 [{report_type}]")
         except requests.exceptions.ReadTimeout:
-            print(f"{log_prefix}第 {actual_num}/{total} 批次读取超时 [{report_type}]")
+            logger.warning(f"{log_prefix}第 {actual_num}/{total} 批次读取超时 [{report_type}]")
         except requests.exceptions.ConnectionError as e:
-            print(f"{log_prefix}第 {actual_num}/{total} 批次连接错误 [{report_type}]：{e}")
+            logger.warning(f"{log_prefix}第 {actual_num}/{total} 批次连接错误 [{report_type}]：{e}")
         except Exception as e:
-            print(f"{log_prefix}第 {actual_num}/{total} 批次发送异常 [{report_type}]：{e}")
+            logger.warning(f"{log_prefix}第 {actual_num}/{total} 批次发送异常 [{report_type}]：{e}")
 
     if success_count == total:
-        print(f"{log_prefix}所有 {total} 批次发送完成 [{report_type}]")
+        logger.info(f"{log_prefix}所有 {total} 批次发送完成 [{report_type}]")
     elif success_count > 0:
-        print(f"{log_prefix}部分发送成功：{success_count}/{total} 批次 [{report_type}]")
+        logger.info(f"{log_prefix}部分发送成功：{success_count}/{total} 批次 [{report_type}]")
     else:
-        print(f"{log_prefix}发送完全失败 [{report_type}]")
+        logger.warning(f"{log_prefix}发送完全失败 [{report_type}]")
         return False
 
     return True
@@ -469,9 +473,9 @@ def send_to_wework(
     is_text_mode = msg_type.lower() == "text"
 
     if is_text_mode:
-        print(f"{log_prefix}使用 text 格式（个人微信模式）[{report_type}]")
+        logger.info(f"{log_prefix}使用 text 格式（个人微信模式）[{report_type}]")
     else:
-        print(f"{log_prefix}使用 markdown 格式（群机器人模式）[{report_type}]")
+        logger.info(f"{log_prefix}使用 markdown 格式（群机器人模式）[{report_type}]")
 
     batches = _prepare_batches(
         "wework", report_data, report_type, update_info, mode,
@@ -606,10 +610,10 @@ def send_to_email(
     """
     try:
         if not html_file_path or not Path(html_file_path).exists():
-            print(f"错误：HTML文件不存在或未提供: {html_file_path}")
+            logger.warning(f"错误：HTML文件不存在或未提供: {html_file_path}")
             return False
 
-        print(f"使用HTML文件: {html_file_path}")
+        logger.info(f"使用HTML文件: {html_file_path}")
         with open(html_file_path, "r", encoding="utf-8") as f:
             html_content = f.read()
 
@@ -634,7 +638,7 @@ def send_to_email(
             smtp_port = config["port"]
             use_tls = config["encryption"] == "TLS"
         else:
-            print(f"未识别的邮箱服务商: {domain}，使用通用 SMTP 配置")
+            logger.info(f"未识别的邮箱服务商: {domain}，使用通用 SMTP 配置")
             smtp_server = f"smtp.{domain}"
             smtp_port = 587
             use_tls = True
@@ -677,9 +681,9 @@ TrendRadar 热点分析报告
         html_part = MIMEText(html_content, "html", "utf-8")
         msg.attach(html_part)
 
-        print(f"正在发送邮件到 {to_email}...")
-        print(f"SMTP 服务器: {smtp_server}:{smtp_port}")
-        print(f"发件人: {from_email}")
+        logger.info(f"正在发送邮件到 {to_email}...")
+        logger.info(f"SMTP 服务器: {smtp_server}:{smtp_port}")
+        logger.info(f"发件人: {from_email}")
 
         try:
             if use_tls:
@@ -702,32 +706,32 @@ TrendRadar 热点分析报告
             server.send_message(msg)
             server.quit()
 
-            print(f"邮件发送成功 [{report_type}] -> {to_email}")
+            logger.info(f"邮件发送成功 [{report_type}] -> {to_email}")
             return True
 
         except smtplib.SMTPServerDisconnected:
-            print("邮件发送失败：服务器意外断开连接，请检查网络或稍后重试")
+            logger.warning("邮件发送失败：服务器意外断开连接，请检查网络或稍后重试")
             return False
 
     except smtplib.SMTPAuthenticationError as e:
-        print("邮件发送失败：认证错误，请检查邮箱和密码/授权码")
-        print(f"详细错误: {str(e)}")
+        logger.warning("邮件发送失败：认证错误，请检查邮箱和密码/授权码")
+        logger.warning(f"详细错误: {str(e)}")
         return False
     except smtplib.SMTPRecipientsRefused as e:
-        print(f"邮件发送失败：收件人地址被拒绝 {e}")
+        logger.warning(f"邮件发送失败：收件人地址被拒绝 {e}")
         return False
     except smtplib.SMTPSenderRefused as e:
-        print(f"邮件发送失败：发件人地址被拒绝 {e}")
+        logger.warning(f"邮件发送失败：发件人地址被拒绝 {e}")
         return False
     except smtplib.SMTPDataError as e:
-        print(f"邮件发送失败：邮件数据错误 {e}")
+        logger.warning(f"邮件发送失败：邮件数据错误 {e}")
         return False
     except smtplib.SMTPConnectError as e:
-        print(f"邮件发送失败：无法连接到 SMTP 服务器 {smtp_server}:{smtp_port}")
-        print(f"详细错误: {str(e)}")
+        logger.warning(f"邮件发送失败：无法连接到 SMTP 服务器 {smtp_server}:{smtp_port}")
+        logger.warning(f"详细错误: {str(e)}")
         return False
     except Exception as e:
-        print(f"邮件发送失败 [{report_type}]：{e}")
+        logger.warning(f"邮件发送失败 [{report_type}]：{e}")
         import traceback
         traceback.print_exc()
         return False
@@ -825,24 +829,24 @@ def send_to_ntfy(
         if response.status_code == 200:
             return True
         if response.status_code == 429:
-            print(f"{log_prefix}第 {actual_num}/{total_batches} 批次速率限制 [{report_type}]，等待后重试")
+            logger.info(f"{log_prefix}第 {actual_num}/{total_batches} 批次速率限制 [{report_type}]，等待后重试")
             time.sleep(10)
             retry_response = requests.post(
                 url, headers=current_headers, data=data, proxies=proxies, timeout=30
             )
             if retry_response.status_code == 200:
-                print(f"{log_prefix}第 {actual_num}/{total_batches} 批次重试成功 [{report_type}]")
+                logger.info(f"{log_prefix}第 {actual_num}/{total_batches} 批次重试成功 [{report_type}]")
                 return True
-            print(f"{log_prefix}第 {actual_num}/{total_batches} 批次重试失败，状态码：{retry_response.status_code}")
+            logger.warning(f"{log_prefix}第 {actual_num}/{total_batches} 批次重试失败，状态码：{retry_response.status_code}")
             return False
         if response.status_code == 413:
-            print(
+            logger.info(
                 f"{log_prefix}第 {actual_num}/{total_batches} 批次消息过大被拒绝 [{report_type}]，消息大小：{len(data)} 字节"
             )
             return False
-        print(f"{log_prefix}第 {actual_num}/{total_batches} 批次发送失败 [{report_type}]，状态码：{response.status_code}")
+        logger.warning(f"{log_prefix}第 {actual_num}/{total_batches} 批次发送失败 [{report_type}]，状态码：{response.status_code}")
         if response.text:
-            print(f"错误详情：{response.text}")
+            logger.warning(f"错误详情：{response.text}")
         return False
 
     # 公共服务器建议 2-3 秒间隔，自托管可以更短
@@ -899,7 +903,7 @@ def send_to_bark(
     device_key = parsed_url.path.strip('/').split('/')[0] if parsed_url.path else None
 
     if not device_key:
-        print(f"{log_prefix} URL 格式错误，无法提取 device_key: {bark_url}")
+        logger.warning(f"{log_prefix} URL 格式错误，无法提取 device_key: {bark_url}")
         return False
 
     # 构建正确的 API 端点
@@ -927,13 +931,13 @@ def send_to_bark(
             result = response.json()
             if result.get("code") == 200:
                 return True
-            print(
+            logger.info(
                 f"{log_prefix}第 {actual_num}/{total_batches} 批次发送失败 [{report_type}]，错误：{result.get('message', '未知错误')}"
             )
             return False
-        print(f"{log_prefix}第 {actual_num}/{total_batches} 批次发送失败 [{report_type}]，状态码：{response.status_code}")
+        logger.warning(f"{log_prefix}第 {actual_num}/{total_batches} 批次发送失败 [{report_type}]，状态码：{response.status_code}")
         if response.text:
-            print(f"错误详情：{response.text}")
+            logger.warning(f"错误详情：{response.text}")
         return False
 
     return _send_batches_reversed(batches, log_prefix, report_type, batch_interval, send_one)
@@ -1074,7 +1078,7 @@ def send_to_generic_webhook(
             try:
                 payload = json.loads(payload_str)
             except json.JSONDecodeError as e:
-                print(f"{log_prefix} JSON 模板解析失败: {e}")
+                logger.warning(f"{log_prefix} JSON 模板解析失败: {e}")
                 # 回退到默认格式
                 payload = {"title": report_type, "content": batch_content}
         else:

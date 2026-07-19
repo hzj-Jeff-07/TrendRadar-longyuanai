@@ -9,6 +9,10 @@
 
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
+from trendradar.utils.log import get_logger
+
+logger = get_logger(__name__)
+
 
 
 def prepare_report_data(
@@ -57,7 +61,7 @@ def prepare_report_data(
         original_new_count = sum(len(titles) for titles in new_titles.values()) if new_titles else 0
         filtered_new_count = sum(len(titles) for titles in filtered_new_titles.values()) if filtered_new_titles else 0
         if original_new_count > 0:
-            print(f"新增热点过滤后：{filtered_new_count} 条保留（原始 {original_new_count} 条）")
+            logger.info(f"新增热点过滤后：{filtered_new_count} 条保留（原始 {original_new_count} 条）")
 
     # 在增量模式下或配置关闭时隐藏新增新闻区域（但计数已完成）
     # 当全部热榜条目都是新增时（首次运行），也隐藏以避免与主区域完全重复

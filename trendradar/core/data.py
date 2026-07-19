@@ -10,6 +10,10 @@ Author: TrendRadar Team
 """
 
 from typing import Dict, List, Tuple, Optional
+from trendradar.utils.log import get_logger
+
+logger = get_logger(__name__)
+
 
 
 def read_all_today_titles_from_storage(
@@ -76,7 +80,7 @@ def read_all_today_titles_from_storage(
         return all_results, final_id_to_name, title_info
 
     except Exception as e:
-        print(f"[存储] 从存储后端读取数据失败: {e}")
+        logger.warning(f"[存储] 从存储后端读取数据失败: {e}")
         return {}, {}, {}
 
 
@@ -103,9 +107,9 @@ def read_all_today_titles(
     if not quiet:
         if all_results:
             total_count = sum(len(titles) for titles in all_results.values())
-            print(f"[存储] 已从存储后端读取 {total_count} 条标题")
+            logger.info(f"[存储] 已从存储后端读取 {total_count} 条标题")
         else:
-            print("[存储] 当天暂无数据")
+            logger.info("[存储] 当天暂无数据")
 
     return all_results, final_id_to_name, title_info
 
@@ -191,7 +195,7 @@ def detect_latest_new_titles_from_storage(
         return new_titles
 
     except Exception as e:
-        print(f"[存储] 从存储后端检测新标题失败: {e}")
+        logger.warning(f"[存储] 从存储后端检测新标题失败: {e}")
         return {}
 
 
@@ -214,5 +218,5 @@ def detect_latest_new_titles(
     new_titles = detect_latest_new_titles_from_storage(storage_manager, current_platform_ids)
     if new_titles and not quiet:
         total_new = sum(len(titles) for titles in new_titles.values())
-        print(f"[存储] 从存储后端检测到 {total_new} 条新增标题")
+        logger.info(f"[存储] 从存储后端检测到 {total_new} 条新增标题")
     return new_titles

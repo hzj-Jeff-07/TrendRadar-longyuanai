@@ -21,6 +21,10 @@ from trendradar.utils.time import (
     format_date_folder,
     format_time_filename,
 )
+from trendradar.utils.log import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class LocalStorageBackend(SQLiteStorageMixin, StorageBackend):
@@ -143,7 +147,7 @@ class LocalStorageBackend(SQLiteStorageMixin, StorageBackend):
                 log_parts.append(f"标题变更 {title_changed_count} 条")
             if off_list_count > 0:
                 log_parts.append(f"脱榜 {off_list_count} 条")
-            print("，".join(log_parts))
+            logger.info("，".join(log_parts))
 
         return success
 
@@ -192,7 +196,7 @@ class LocalStorageBackend(SQLiteStorageMixin, StorageBackend):
         success = self._record_period_execution_impl(date_str, period_key, action)
         if success:
             now_str = self._get_configured_time().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"[本地存储] 时间段执行记录已保存: {period_key}/{action} at {now_str}")
+            logger.info(f"[本地存储] 时间段执行记录已保存: {period_key}/{action} at {now_str}")
         return success
 
     # ========================================
@@ -208,7 +212,7 @@ class LocalStorageBackend(SQLiteStorageMixin, StorageBackend):
             log_parts = [f"[本地存储] RSS 处理完成：新增 {new_count} 条"]
             if updated_count > 0:
                 log_parts.append(f"更新 {updated_count} 条")
-            print("，".join(log_parts))
+            logger.info("，".join(log_parts))
 
         return success
 
@@ -337,11 +341,11 @@ class LocalStorageBackend(SQLiteStorageMixin, StorageBackend):
                     for failed_id in data.failed_ids:
                         f.write(f"{failed_id}\n")
 
-            print(f"[本地存储] TXT 快照已保存: {file_path}")
+            logger.info(f"[本地存储] TXT 快照已保存: {file_path}")
             return str(file_path)
 
         except Exception as e:
-            print(f"[本地存储] 保存 TXT 快照失败: {e}")
+            logger.warning(f"[本地存储] 保存 TXT 快照失败: {e}")
             return None
 
     def save_html_report(self, html_content: str, filename: str) -> Optional[str]:
@@ -370,11 +374,11 @@ class LocalStorageBackend(SQLiteStorageMixin, StorageBackend):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(html_content)
 
-            print(f"[本地存储] HTML 报告已保存: {file_path}")
+            logger.info(f"[本地存储] HTML 报告已保存: {file_path}")
             return str(file_path)
 
         except Exception as e:
-            print(f"[本地存储] 保存 HTML 报告失败: {e}")
+            logger.warning(f"[本地存储] 保存 HTML 报告失败: {e}")
             return None
 
     # ========================================
@@ -386,9 +390,9 @@ class LocalStorageBackend(SQLiteStorageMixin, StorageBackend):
         for db_path, conn in self._db_connections.items():
             try:
                 conn.close()
-                print(f"[本地存储] 关闭数据库连接: {db_path}")
+                logger.info(f"[本地存储] 关闭数据库连接: {db_path}")
             except Exception as e:
-                print(f"[本地存储] 关闭连接失败 {db_path}: {e}")
+                logger.warning(f"[本地存储] 关闭连接失败 {db_path}: {e}")
 
         self._db_connections.clear()
 
@@ -457,9 +461,9 @@ class LocalStorageBackend(SQLiteStorageMixin, StorageBackend):
                         try:
                             db_file.unlink()
                             deleted_count += 1
-                            print(f"[本地存储] 清理过期数据: {db_type}/{db_file.name}")
+                            logger.info(f"[本地存储] 清理过期数据: {db_type}/{db_file.name}")
                         except Exception as e:
-                            print(f"[本地存储] 删除文件失败 {db_file}: {e}")
+                            logger.warning(f"[本地存储] 删除文件失败 {db_file}: {e}")
 
             # 清理快照目录 (txt/, html/)
             for snapshot_type in ["txt", "html"]:
@@ -476,17 +480,17 @@ class LocalStorageBackend(SQLiteStorageMixin, StorageBackend):
                         try:
                             shutil.rmtree(date_folder)
                             deleted_count += 1
-                            print(f"[本地存储] 清理过期数据: {snapshot_type}/{date_folder.name}")
+                            logger.info(f"[本地存储] 清理过期数据: {snapshot_type}/{date_folder.name}")
                         except Exception as e:
-                            print(f"[本地存储] 删除目录失败 {date_folder}: {e}")
+                            logger.warning(f"[本地存储] 删除目录失败 {date_folder}: {e}")
 
             if deleted_count > 0:
-                print(f"[本地存储] 共清理 {deleted_count} 个过期文件/目录")
+                logger.info(f"[本地存储] 共清理 {deleted_count} 个过期文件/目录")
 
             return deleted_count
 
         except Exception as e:
-            print(f"[本地存储] 清理过期数据失败: {e}")
+            logger.warning(f"[本地存储] 清理过期数据失败: {e}")
             return deleted_count
 
     def __del__(self):

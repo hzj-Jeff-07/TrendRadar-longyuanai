@@ -10,6 +10,10 @@ from typing import Optional
 
 from trendradar.storage.base import StorageBackend, NewsData, RSSData
 from trendradar.utils.time import DEFAULT_TIMEZONE
+from trendradar.utils.log import get_logger
+
+logger = get_logger(__name__)
+
 
 
 # 存储管理器单例
@@ -99,7 +103,7 @@ class StorageManager:
                 if self._has_remote_config():
                     return "remote"
                 else:
-                    print("[存储管理器] GitHub Actions 环境但未配置远程存储，使用本地存储")
+                    logger.info("[存储管理器] GitHub Actions 环境但未配置远程存储，使用本地存储")
                     return "local"
             else:
                 return "local"
@@ -116,11 +120,11 @@ class StorageManager:
         # 调试日志
         has_config = bool(bucket_name and access_key and secret_key and endpoint)
         if not has_config:
-            print("[存储管理器] 远程存储配置检查失败:")
-            print(f"  - bucket_name: {'已配置' if bucket_name else '未配置'}")
-            print(f"  - access_key_id: {'已配置' if access_key else '未配置'}")
-            print(f"  - secret_access_key: {'已配置' if secret_key else '未配置'}")
-            print(f"  - endpoint_url: {'已配置' if endpoint else '未配置'}")
+            logger.warning("[存储管理器] 远程存储配置检查失败:")
+            logger.info(f"  - bucket_name: {'已配置' if bucket_name else '未配置'}")
+            logger.info(f"  - access_key_id: {'已配置' if access_key else '未配置'}")
+            logger.info(f"  - secret_access_key: {'已配置' if secret_key else '未配置'}")
+            logger.info(f"  - endpoint_url: {'已配置' if endpoint else '未配置'}")
 
         return has_config
 
@@ -140,11 +144,11 @@ class StorageManager:
                 timezone=self.timezone,
             )
         except ImportError as e:
-            print(f"[存储管理器] 远程后端导入失败: {e}")
-            print("[存储管理器] 请确保已安装 boto3: pip install boto3")
+            logger.warning(f"[存储管理器] 远程后端导入失败: {e}")
+            logger.info("[存储管理器] 请确保已安装 boto3: pip install boto3")
             return None
         except Exception as e:
-            print(f"[存储管理器] 远程后端初始化失败: {e}")
+            logger.warning(f"[存储管理器] 远程后端初始化失败: {e}")
             return None
 
     def get_backend(self) -> StorageBackend:
@@ -155,9 +159,9 @@ class StorageManager:
             if resolved_type == "remote":
                 self._backend = self._create_remote_backend()
                 if self._backend:
-                    print("[存储管理器] 使用远程存储后端")
+                    logger.info("[存储管理器] 使用远程存储后端")
                 else:
-                    print("[存储管理器] 回退到本地存储")
+                    logger.info("[存储管理器] 回退到本地存储")
                     resolved_type = "local"
 
             if resolved_type == "local" or self._backend is None:
@@ -169,7 +173,7 @@ class StorageManager:
                     enable_html=self.enable_html,
                     timezone=self.timezone,
                 )
-                print(f"[存储管理器] 使用本地存储后端 (数据目录: {self.data_dir})")
+                logger.info(f"[存储管理器] 使用本地存储后端 (数据目录: {self.data_dir})")
 
         return self._backend
 
@@ -184,7 +188,7 @@ class StorageManager:
             return 0
 
         if not self._has_remote_config():
-            print("[存储管理器] 未配置远程存储，无法拉取")
+            logger.warning("[存储管理器] 未配置远程存储，无法拉取")
             return 0
 
         # 创建远程后端（如果还没有）
@@ -192,7 +196,7 @@ class StorageManager:
             self._remote_backend = self._create_remote_backend()
 
         if self._remote_backend is None:
-            print("[存储管理器] 无法创建远程后端，拉取失败")
+            logger.warning("[存储管理器] 无法创建远程后端，拉取失败")
             return 0
 
         # 调用拉取方法

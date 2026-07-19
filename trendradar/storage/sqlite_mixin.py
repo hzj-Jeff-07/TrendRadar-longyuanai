@@ -13,6 +13,10 @@ from typing import Any, Dict, List, Optional
 
 from trendradar.storage.base import NewsItem, NewsData, RSSItem, RSSData
 from trendradar.utils.url import normalize_url
+from trendradar.utils.log import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class SQLiteStorageMixin:
@@ -245,7 +249,7 @@ class SQLiteStorageMixin:
                             new_count += 1
 
                     except sqlite3.Error as e:
-                        print(f"{log_prefix} 保存新闻条目失败 [{item.title[:30]}...]: {e}")
+                        logger.warning(f"{log_prefix} 保存新闻条目失败 [{item.title[:30]}...]: {e}")
 
             total_items = new_count + updated_count
 
@@ -337,7 +341,7 @@ class SQLiteStorageMixin:
             return True, new_count, updated_count, title_changed_count, off_list_count
 
         except Exception as e:
-            print(f"{log_prefix} 保存失败: {e}")
+            logger.warning(f"{log_prefix} 保存失败: {e}")
             return False, 0, 0, 0, 0
 
     def _get_today_all_data_impl(self, date: Optional[str] = None) -> Optional[NewsData]:
@@ -476,7 +480,7 @@ class SQLiteStorageMixin:
             )
 
         except Exception as e:
-            print(f"[存储] 读取数据失败: {e}")
+            logger.warning(f"[存储] 读取数据失败: {e}")
             return None
 
     def _get_latest_crawl_data_impl(self, date: Optional[str] = None) -> Optional[NewsData]:
@@ -614,7 +618,7 @@ class SQLiteStorageMixin:
             )
 
         except Exception as e:
-            print(f"[存储] 获取最新数据失败: {e}")
+            logger.warning(f"[存储] 获取最新数据失败: {e}")
             return None
 
     def _detect_new_titles_impl(self, current_data: NewsData) -> Dict[str, Dict]:
@@ -673,7 +677,7 @@ class SQLiteStorageMixin:
             return new_titles
 
         except Exception as e:
-            print(f"[存储] 检测新标题失败: {e}")
+            logger.warning(f"[存储] 检测新标题失败: {e}")
             return {}
 
     def _is_first_crawl_today_impl(self, date: Optional[str] = None) -> bool:
@@ -701,7 +705,7 @@ class SQLiteStorageMixin:
             return count <= 1
 
         except Exception as e:
-            print(f"[存储] 检查首次抓取失败: {e}")
+            logger.warning(f"[存储] 检查首次抓取失败: {e}")
             return True
 
     def _get_crawl_times_impl(self, date: Optional[str] = None) -> List[str]:
@@ -727,7 +731,7 @@ class SQLiteStorageMixin:
             return [row[0] for row in rows]
 
         except Exception as e:
-            print(f"[存储] 获取抓取时间列表失败: {e}")
+            logger.warning(f"[存储] 获取抓取时间列表失败: {e}")
             return []
 
     # ========================================
@@ -766,7 +770,7 @@ class SQLiteStorageMixin:
             return cursor.fetchone() is not None
 
         except Exception as e:
-            print(f"[存储] 检查时间段执行记录失败: {e}")
+            logger.warning(f"[存储] 检查时间段执行记录失败: {e}")
             return False
 
     def _record_period_execution_impl(self, date_str: str, period_key: str, action: str) -> bool:
@@ -808,7 +812,7 @@ class SQLiteStorageMixin:
             return True
 
         except Exception as e:
-            print(f"[存储] 记录时间段执行失败: {e}")
+            logger.warning(f"[存储] 记录时间段执行失败: {e}")
             return False
 
     # ========================================
@@ -908,7 +912,7 @@ class SQLiteStorageMixin:
                                 pass
 
                     except sqlite3.Error as e:
-                        print(f"{log_prefix} 保存 RSS 条目失败 [{item.title[:30]}...]: {e}")
+                        logger.warning(f"{log_prefix} 保存 RSS 条目失败 [{item.title[:30]}...]: {e}")
 
             total_items = new_count + updated_count
 
@@ -953,7 +957,7 @@ class SQLiteStorageMixin:
             return True, new_count, updated_count
 
         except Exception as e:
-            print(f"{log_prefix} 保存 RSS 数据失败: {e}")
+            logger.warning(f"{log_prefix} 保存 RSS 数据失败: {e}")
             return False, 0, 0
 
     def _get_rss_data_impl(self, date: Optional[str] = None) -> Optional[RSSData]:
@@ -1038,7 +1042,7 @@ class SQLiteStorageMixin:
             )
 
         except Exception as e:
-            print(f"[存储] 读取 RSS 数据失败: {e}")
+            logger.warning(f"[存储] 读取 RSS 数据失败: {e}")
             return None
 
     def _detect_new_rss_items_impl(self, current_data: RSSData) -> Dict[str, List[RSSItem]]:
@@ -1095,7 +1099,7 @@ class SQLiteStorageMixin:
             return new_items
 
         except Exception as e:
-            print(f"[存储] 检测新 RSS 条目失败: {e}")
+            logger.warning(f"[存储] 检测新 RSS 条目失败: {e}")
             return {}
 
     def _get_latest_rss_data_impl(self, date: Optional[str] = None) -> Optional[RSSData]:
@@ -1186,7 +1190,7 @@ class SQLiteStorageMixin:
             )
 
         except Exception as e:
-            print(f"[存储] 获取最新 RSS 数据失败: {e}")
+            logger.warning(f"[存储] 获取最新 RSS 数据失败: {e}")
             return None
 
     # ========================================
@@ -1214,7 +1218,7 @@ class SQLiteStorageMixin:
                 for row in cursor.fetchall()
             ]
         except Exception as e:
-            print(f"[AI筛选] 获取标签失败: {e}")
+            logger.warning(f"[AI筛选] 获取标签失败: {e}")
             return []
 
     def _get_latest_prompt_hash_impl(self, date: Optional[str] = None, interests_file: str = "ai_interests.txt") -> Optional[str]:
@@ -1232,7 +1236,7 @@ class SQLiteStorageMixin:
             row = cursor.fetchone()
             return row[0] if row else None
         except Exception as e:
-            print(f"[AI筛选] 获取 prompt_hash 失败: {e}")
+            logger.warning(f"[AI筛选] 获取 prompt_hash 失败: {e}")
             return None
 
     def _get_latest_tag_version_impl(self, date: Optional[str] = None) -> int:
@@ -1247,7 +1251,7 @@ class SQLiteStorageMixin:
             row = cursor.fetchone()
             return row[0] if row and row[0] is not None else 0
         except Exception as e:
-            print(f"[AI筛选] 获取版本号失败: {e}")
+            logger.warning(f"[AI筛选] 获取版本号失败: {e}")
             return 0
 
     def _deprecate_all_tags_impl(self, date: Optional[str] = None, interests_file: str = "ai_interests.txt") -> int:
@@ -1285,10 +1289,10 @@ class SQLiteStorageMixin:
             """, [now_str] + tag_ids)
 
             conn.commit()
-            print(f"[AI筛选] 已废弃 {tag_count} 个标签及关联分类结果")
+            logger.info(f"[AI筛选] 已废弃 {tag_count} 个标签及关联分类结果")
             return tag_count
         except Exception as e:
-            print(f"[AI筛选] 废弃标签失败: {e}")
+            logger.warning(f"[AI筛选] 废弃标签失败: {e}")
             return 0
 
     def _save_tags_impl(
@@ -1326,7 +1330,7 @@ class SQLiteStorageMixin:
             conn.commit()
             return count
         except Exception as e:
-            print(f"[AI筛选] 保存标签失败: {e}")
+            logger.warning(f"[AI筛选] 保存标签失败: {e}")
             return 0
 
     def _deprecate_specific_tags_impl(
@@ -1358,7 +1362,7 @@ class SQLiteStorageMixin:
             conn.commit()
             return tag_count
         except Exception as e:
-            print(f"[AI筛选] 废弃指定标签失败: {e}")
+            logger.warning(f"[AI筛选] 废弃指定标签失败: {e}")
             return 0
 
     def _update_tags_hash_impl(
@@ -1379,7 +1383,7 @@ class SQLiteStorageMixin:
             conn.commit()
             return count
         except Exception as e:
-            print(f"[AI筛选] 更新标签 hash 失败: {e}")
+            logger.warning(f"[AI筛选] 更新标签 hash 失败: {e}")
             return 0
 
     # ========================================
@@ -1411,7 +1415,7 @@ class SQLiteStorageMixin:
             conn.commit()
             return count
         except Exception as e:
-            print(f"[AI筛选] 更新标签描述失败: {e}")
+            logger.warning(f"[AI筛选] 更新标签描述失败: {e}")
             return 0
 
     def _update_tag_priorities_impl(
@@ -1443,7 +1447,7 @@ class SQLiteStorageMixin:
             conn.commit()
             return count
         except Exception as e:
-            print(f"[AI筛选] 更新标签优先级失败: {e}")
+            logger.warning(f"[AI筛选] 更新标签优先级失败: {e}")
             return 0
 
     # ========================================
@@ -1479,7 +1483,7 @@ class SQLiteStorageMixin:
             conn.commit()
             return count
         except Exception as e:
-            print(f"[AI筛选] 保存已分析记录失败: {e}")
+            logger.warning(f"[AI筛选] 保存已分析记录失败: {e}")
             return 0
 
     def _get_analyzed_news_ids_impl(
@@ -1498,7 +1502,7 @@ class SQLiteStorageMixin:
 
             return {row[0] for row in cursor.fetchall()}
         except Exception as e:
-            print(f"[AI筛选] 获取已分析ID失败: {e}")
+            logger.warning(f"[AI筛选] 获取已分析ID失败: {e}")
             return set()
 
     def _clear_analyzed_news_impl(
@@ -1518,7 +1522,7 @@ class SQLiteStorageMixin:
             conn.commit()
             return count
         except Exception as e:
-            print(f"[AI筛选] 清除已分析记录失败: {e}")
+            logger.warning(f"[AI筛选] 清除已分析记录失败: {e}")
             return 0
 
     def _clear_unmatched_analyzed_news_impl(
@@ -1538,7 +1542,7 @@ class SQLiteStorageMixin:
             conn.commit()
             return count
         except Exception as e:
-            print(f"[AI筛选] 清除不匹配记录失败: {e}")
+            logger.warning(f"[AI筛选] 清除不匹配记录失败: {e}")
             return 0
 
     # ========================================
@@ -1575,7 +1579,7 @@ class SQLiteStorageMixin:
             conn.commit()
             return count
         except Exception as e:
-            print(f"[AI筛选] 保存分类结果失败: {e}")
+            logger.warning(f"[AI筛选] 保存分类结果失败: {e}")
             return 0
 
     def _get_active_filter_results_impl(self, date: Optional[str] = None, interests_file: str = "ai_interests.txt") -> List[Dict[str, Any]]:
@@ -1712,7 +1716,7 @@ class SQLiteStorageMixin:
 
             return results
         except Exception as e:
-            print(f"[AI筛选] 获取分类结果失败: {e}")
+            logger.warning(f"[AI筛选] 获取分类结果失败: {e}")
             return []
 
     def _get_all_news_ids_impl(self, date: Optional[str] = None) -> List[Dict]:
@@ -1736,7 +1740,7 @@ class SQLiteStorageMixin:
                 for row in cursor.fetchall()
             ]
         except Exception as e:
-            print(f"[AI筛选] 获取新闻列表失败: {e}")
+            logger.warning(f"[AI筛选] 获取新闻列表失败: {e}")
             return []
 
     def _get_all_rss_ids_impl(self, date: Optional[str] = None) -> List[Dict]:
@@ -1761,5 +1765,5 @@ class SQLiteStorageMixin:
                 for row in cursor.fetchall()
             ]
         except Exception as e:
-            print(f"[AI筛选] 获取 RSS 列表失败: {e}")
+            logger.warning(f"[AI筛选] 获取 RSS 列表失败: {e}")
             return []

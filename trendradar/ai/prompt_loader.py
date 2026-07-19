@@ -8,6 +8,10 @@
 
 from pathlib import Path
 from typing import Tuple
+from trendradar.utils.log import get_logger
+
+logger = get_logger(__name__)
+
 
 # 项目 config 根目录
 _CONFIG_ROOT = Path(__file__).parent.parent.parent / "config"
@@ -33,7 +37,7 @@ def load_prompt_template(
     prompt_path = config_dir / prompt_file
 
     if not prompt_path.exists():
-        print(f"[{label}] 提示词文件不存在: {prompt_path}")
+        logger.info(f"[{label}] 提示词文件不存在: {prompt_path}")
         return "", ""
 
     content = prompt_path.read_text(encoding="utf-8")
