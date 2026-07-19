@@ -17,6 +17,10 @@ from urllib.parse import urlparse
 
 import requests
 
+from trendradar.utils.log import get_logger
+
+logger = get_logger(__name__)
+
 
 class DataFetcher:
     """数据获取器"""
@@ -47,6 +51,9 @@ class DataFetcher:
         """
         self.proxy_url = proxy_url
         self.api_url = api_url or self.DEFAULT_API_URL
+        # 复用 TCP/TLS 连接，避免批量爬取时每个请求重新握手
+        self.session = requests.Session()
+        self.session.headers.update(self.DEFAULT_HEADERS)
 
     @staticmethod
     def _check_domain_safety(
@@ -117,10 +124,9 @@ class DataFetcher:
         retries = 0
         while retries <= max_retries:
             try:
-                response = requests.get(
+                response = self.session.get(
                     url,
                     proxies=proxies,
-                    headers=self.DEFAULT_HEADERS,
                     timeout=10,
                 )
                 response.raise_for_status()
@@ -133,7 +139,7 @@ class DataFetcher:
                     raise ValueError(f"响应状态异常: {status}")
 
                 status_info = "最新数据" if status == "success" else "缓存数据"
-                print(f"获取 {id_value} 成功（{status_info}）")
+                logger.info(f"获取 {id_value} 成功（{status_info}）")
                 return data_text, id_value, alias
 
             except Exception as e:
@@ -142,10 +148,10 @@ class DataFetcher:
                     base_wait = random.uniform(min_retry_wait, max_retry_wait)
                     additional_wait = (retries - 1) * random.uniform(1, 2)
                     wait_time = base_wait + additional_wait
-                    print(f"请求 {id_value} 失败: {e}. {wait_time:.2f}秒后重试...")
+                    logger.warning(f"请求 {id_value} 失败: {e}. {wait_time:.2f}秒后重试...")
                     time.sleep(wait_time)
                 else:
-                    print(f"请求 {id_value} 失败: {e}")
+                    logger.warning(f"请求 {id_value} 失败: {e}")
                     return None, id_value, alias
 
         return None, id_value, alias
@@ -192,11 +198,11 @@ class DataFetcher:
                     if expected_domain:
                         bad_reason = self._check_domain_safety(items, expected_domain)
                         if bad_reason:
-                            print(f"⚠️ 安全警告: {name}({id_value}) 返回数据未通过域名安全校验！")
-                            print(f"   预期域名: https://*.{expected_domain}")
-                            print(f"   异常来源: {bad_reason}")
-                            print(f"   当前 API 地址: {self.api_url}")
-                            print(f"   该平台数据已丢弃，请检查 API 来源是否可信")
+                            logger.warning(f"⚠️ 安全警告: {name}({id_value}) 返回数据未通过域名安全校验！")
+                            logger.warning(f"   预期域名: https://*.{expected_domain}")
+                            logger.warning(f"   异常来源: {bad_reason}")
+                            logger.warning(f"   当前 API 地址: {self.api_url}")
+                            logger.warning("   该平台数据已丢弃，请检查 API 来源是否可信")
                             failed_ids.append(id_value)
                             continue
 
@@ -220,10 +226,10 @@ class DataFetcher:
                                 "mobileUrl": mobile_url,
                             }
                 except json.JSONDecodeError:
-                    print(f"解析 {id_value} 响应失败")
+                    logger.warning(f"解析 {id_value} 响应失败")
                     failed_ids.append(id_value)
                 except Exception as e:
-                    print(f"处理 {id_value} 数据出错: {e}")
+                    logger.warning(f"处理 {id_value} 数据出错: {e}")
                     failed_ids.append(id_value)
             else:
                 failed_ids.append(id_value)
@@ -234,5 +240,5 @@ class DataFetcher:
                 actual_interval = max(50, actual_interval)
                 time.sleep(actual_interval / 1000)
 
-        print(f"成功: {list(results.keys())}, 失败: {failed_ids}")
+        logger.info(f"成功: {list(results.keys())}, 失败: {failed_ids}")
         return results, id_to_name, failed_ids

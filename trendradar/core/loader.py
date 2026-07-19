@@ -13,6 +13,10 @@ import yaml
 
 from .config import parse_multi_account_config, validate_paired_configs
 from trendradar.utils.time import DEFAULT_TIMEZONE
+from trendradar.utils.log import get_logger
+
+logger = get_logger(__name__)
+
 
 
 def _get_env_bool(key: str) -> Optional[bool]:
@@ -137,7 +141,7 @@ def _load_timeline_data(config_dir: str = "config") -> Dict:
     """
     timeline_path = Path(config_dir) / "timeline.yaml"
     if not timeline_path.exists():
-        print(f"[调度] timeline.yaml 未找到: {timeline_path}，使用空模板")
+        logger.info(f"[调度] timeline.yaml 未找到: {timeline_path}，使用空模板")
         return {
             "presets": {},
             "custom": {
@@ -158,7 +162,7 @@ def _load_timeline_data(config_dir: str = "config") -> Dict:
     with open(timeline_path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
-    print(f"[调度] timeline.yaml 加载成功: {timeline_path}")
+    logger.info(f"[调度] timeline.yaml 加载成功: {timeline_path}")
     return data or {}
 
 
@@ -191,10 +195,10 @@ def _load_rss_config(config_data: Dict) -> Dict:
     try:
         max_age_days = int(raw_max_age)
         if max_age_days < 0:
-            print(f"[警告] RSS freshness_filter.max_age_days 为负数 ({max_age_days})，使用默认值 3")
+            logger.warning(f"[警告] RSS freshness_filter.max_age_days 为负数 ({max_age_days})，使用默认值 3")
             max_age_days = 3
     except (ValueError, TypeError):
-        print(f"[警告] RSS freshness_filter.max_age_days 格式错误 ({raw_max_age})，使用默认值 3")
+        logger.warning(f"[警告] RSS freshness_filter.max_age_days 格式错误 ({raw_max_age})，使用默认值 3")
         max_age_days = 3
 
     # RSS 配置直接从 config.yaml 读取，不再支持环境变量
@@ -515,10 +519,10 @@ def _print_notification_sources(config: Dict) -> None:
         notification_sources.append(f"通用Webhook({source}, {count}个账号)")
 
     if notification_sources:
-        print(f"通知渠道配置来源: {', '.join(notification_sources)}")
-        print(f"每个渠道最大账号数: {max_accounts}")
+        logger.info(f"通知渠道配置来源: {', '.join(notification_sources)}")
+        logger.info(f"每个渠道最大账号数: {max_accounts}")
     else:
-        print("未配置任何通知渠道")
+        logger.info("未配置任何通知渠道")
 
 
 def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
@@ -543,7 +547,7 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     with open(config_path, "r", encoding="utf-8") as f:
         config_data = yaml.safe_load(f)
 
-    print(f"配置文件加载成功: {config_path}")
+    logger.info(f"配置文件加载成功: {config_path}")
 
     # 合并所有配置
     config = {}
