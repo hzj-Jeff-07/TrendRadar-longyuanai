@@ -1295,8 +1295,8 @@ class NotificationTools:
                         # 使用 config 中的 default
                         sizes[ch_id] = default_size
                 return sizes
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Warning: 读取 batch_sizes 配置失败，使用默认值: {e}")
         return dict(_CHANNEL_BATCH_SIZES_DEFAULT)
 
     def _get_batch_interval(self) -> float:
@@ -1307,8 +1307,8 @@ class NotificationTools:
                 with open(config_path, "r", encoding="utf-8") as f:
                     raw = yaml.safe_load(f) or {}
                 return float(raw.get("advanced", {}).get("batch_send_interval", _BATCH_INTERVAL_DEFAULT))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Warning: 读取 batch_send_interval 配置失败，使用默认值: {e}")
         return _BATCH_INTERVAL_DEFAULT
 
     def _send_batched_multi_account(

@@ -431,7 +431,8 @@ class LocalStorageBackend(SQLiteStorageMixin, StorageBackend):
                         int(date_match.group(3)),
                         tzinfo=pytz.timezone(self.timezone)
                     )
-            except Exception:
+            except (ValueError, KeyError):
+                # 文件名非法日期或未知时区，视为无法解析
                 pass
             return None
 
@@ -454,8 +455,9 @@ class LocalStorageBackend(SQLiteStorageMixin, StorageBackend):
                             try:
                                 self._db_connections[db_path].close()
                                 del self._db_connections[db_path]
-                            except Exception:
-                                pass
+                            except Exception as close_err:
+                                # 关闭陈旧连接失败不阻断后续删除
+                                logger.debug(f"[本地存储] 关闭数据库连接失败 ({db_path}): {close_err}")
 
                         # 删除文件
                         try:

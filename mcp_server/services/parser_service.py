@@ -371,7 +371,7 @@ class ParserService:
                 config_data = yaml.safe_load(f)
             return config_data
         except Exception as e:
-            raise FileParseError(str(config_path), str(e))
+            raise FileParseError(str(config_path), str(e)) from e
 
     def parse_frequency_words(self, words_file: str = None) -> List[Dict]:
         """
@@ -420,7 +420,7 @@ class ParserService:
         except FileNotFoundError:
             return []
         except Exception as e:
-            raise FileParseError(words_file, str(e))
+            raise FileParseError(words_file, str(e)) from e
 
     def get_available_dates(self, db_type: str = "news") -> List[str]:
         """
