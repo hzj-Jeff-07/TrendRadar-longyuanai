@@ -205,6 +205,7 @@ def _load_rss_config(config_data: Dict) -> Dict:
     return {
         "ENABLED": rss.get("enabled", False),
         "REQUEST_INTERVAL": advanced_rss.get("request_interval", 2000),
+        "CONCURRENT_WORKERS": advanced_rss.get("concurrent_workers", 4),
         "TIMEOUT": advanced_rss.get("timeout", 15),
         "USE_PROXY": advanced_rss.get("use_proxy", False),
         "PROXY_URL": rss_proxy_url,

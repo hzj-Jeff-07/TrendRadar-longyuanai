@@ -1061,6 +1061,7 @@ class NewsAnalyzer:
                 timezone=timezone,
                 freshness_enabled=freshness_enabled,
                 default_max_age_days=default_max_age_days,
+                concurrent_workers=rss_config.get("CONCURRENT_WORKERS", 4),
             )
 
             # 抓取数据

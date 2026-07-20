@@ -472,7 +472,8 @@ advanced:
 
   # RSS settings
   rss:
-    request_interval: 1000            # Request interval (ms)
+    request_interval: 1000            # Request interval (ms, only applies in serial mode when workers=1)
+    concurrent_workers: 4             # Concurrent fetch threads (>1 = parallel, feeds are independent so safe; =1 = serial with rate limit)
     timeout: 15                       # Request timeout (seconds)
     use_proxy: false                  # Use proxy (true=on, false=off)
     proxy_url: ""                     # RSS-specific proxy (empty → use crawler.default_proxy)

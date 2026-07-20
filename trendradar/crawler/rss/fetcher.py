@@ -7,6 +7,7 @@ RSS 抓取器
 
 import time
 import random
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Tuple
 
@@ -44,19 +45,23 @@ class RSSFetcher:
         timezone: str = DEFAULT_TIMEZONE,
         freshness_enabled: bool = True,
         default_max_age_days: int = 3,
+        concurrent_workers: int = 4,
     ):
         """
         初始化抓取器
 
         Args:
             feeds: RSS 源配置列表
-            request_interval: 请求间隔（毫秒）
+            request_interval: 请求间隔（毫秒，仅串行模式生效）
             timeout: 请求超时（秒）
             use_proxy: 是否使用代理
             proxy_url: 代理 URL
             timezone: 时区配置（如 'Asia/Shanghai'）
             freshness_enabled: 是否启用新鲜度过滤
             default_max_age_days: 默认最大文章年龄（天）
+            concurrent_workers: 并发抓取线程数（>1 启用并发，各 RSS 源
+                互相独立可安全并发；=1 退回串行并保留 request_interval 间隔，
+                适用于多个源来自同一 host 需限流的场景）
         """
         self.feeds = [f for f in feeds if f.enabled]
         self.request_interval = request_interval
@@ -66,6 +71,7 @@ class RSSFetcher:
         self.timezone = timezone
         self.freshness_enabled = freshness_enabled
         self.default_max_age_days = default_max_age_days
+        self.concurrent_workers = max(1, concurrent_workers)
 
         self.parser = RSSParser()
         self.session = self._create_session()
@@ -170,19 +176,28 @@ class RSSFetcher:
         crawl_time = now.strftime("%H:%M")
         crawl_date = now.strftime("%Y-%m-%d")
 
-        logger.info(f"[RSS] 开始抓取 {len(self.feeds)} 个 RSS 源...")
+        workers = min(self.concurrent_workers, len(self.feeds)) if self.feeds else 1
 
-        for i, feed in enumerate(self.feeds):
-            # 请求间隔（带随机波动）
-            if i > 0:
-                interval = self.request_interval / 1000
-                jitter = random.uniform(-0.2, 0.2) * interval
-                time.sleep(interval + jitter)
+        if workers > 1:
+            # 并发抓取：各 RSS 源互相独立，无需 request_interval 限流
+            logger.info(f"[RSS] 开始并发抓取 {len(self.feeds)} 个 RSS 源（并发数 {workers}）...")
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                # map 保持与 self.feeds 相同的顺序，结果可确定性组装
+                results = list(executor.map(self.fetch_feed, self.feeds))
+        else:
+            # 串行抓取：保留 request_interval 间隔（同 host 限流场景）
+            logger.info(f"[RSS] 开始抓取 {len(self.feeds)} 个 RSS 源...")
+            results = []
+            for i, feed in enumerate(self.feeds):
+                if i > 0:
+                    interval = self.request_interval / 1000
+                    jitter = random.uniform(-0.2, 0.2) * interval
+                    time.sleep(interval + jitter)
+                results.append(self.fetch_feed(feed))
 
-            items, error = self.fetch_feed(feed)
-
+        # 按 feed 顺序组装结果
+        for feed, (items, error) in zip(self.feeds, results):
             id_to_name[feed.id] = feed.name
-
             if error:
                 failed_ids.append(feed.id)
             else:
@@ -263,4 +278,5 @@ class RSSFetcher:
             timezone=config.get("timezone", DEFAULT_TIMEZONE),
             freshness_enabled=freshness_enabled,
             default_max_age_days=default_max_age_days,
+            concurrent_workers=config.get("concurrent_workers", 4),
         )
