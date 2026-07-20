@@ -34,8 +34,10 @@ line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]
-# 先只启用可靠性检查（语法错误 + pyflakes），避免大规模格式化改动
-select = ["E9", "F"]
+# 可靠性检查：语法错误(E9) + pyflakes(F) + bugbear 真 bug 子集
+#   B033=集合重复值, B904=except 内 raise 缺失异常链
+# 未启用 B 全集（B007/B905 等偏风格），避免大规模改动
+select = ["E9", "F", "B033", "B904"]
 
 [tool.ruff.lint.per-file-ignores]
 # __init__.py 中的导入用于 re-export

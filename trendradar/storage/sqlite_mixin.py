@@ -1477,8 +1477,9 @@ class SQLiteStorageMixin:
                         now_str,
                     ))
                     count += 1
-                except Exception:
-                    pass
+                except Exception as row_err:
+                    # 单条写入失败不影响其余记录，记录以便排查数据缺失
+                    logger.debug(f"[存储] AI 筛选记录写入失败 (news_item_id={nid}): {row_err}")
 
             conn.commit()
             return count

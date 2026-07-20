@@ -109,7 +109,7 @@ class RSSParser:
         try:
             data = json.loads(content)
         except json.JSONDecodeError as e:
-            raise ValueError(f"JSON Feed 解析失败 ({feed_url}): {e}")
+            raise ValueError(f"JSON Feed 解析失败 ({feed_url}): {e}") from e
 
         items_data = data.get("items", [])
         if not items_data:

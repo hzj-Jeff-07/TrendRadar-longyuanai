@@ -99,7 +99,7 @@ def _parse_string_to_int(value: str, param_name: str = "参数") -> int:
         raise InvalidParameterError(
             f"{param_name} 必须是整数，无法解析: {value}",
             suggestion="请提供有效的整数值，如: 10, 50, 100"
-        )
+        ) from None
 
 
 def _parse_string_to_float(value: str, param_name: str = "参数") -> float:
@@ -124,7 +124,7 @@ def _parse_string_to_float(value: str, param_name: str = "参数") -> float:
         raise InvalidParameterError(
             f"{param_name} 必须是数字，无法解析: {value}",
             suggestion="请提供有效的数字值，如: 0.6, 3.0"
-        )
+        ) from None
 
 
 def _parse_string_to_bool(value: str) -> bool:
@@ -310,7 +310,7 @@ def validate_date(date_str: str) -> datetime:
         raise InvalidParameterError(
             f"日期格式错误: {date_str}",
             suggestion="请使用 YYYY-MM-DD 格式，例如: 2025-10-11"
-        )
+        ) from None
 
 
 def normalize_date_range(date_range: Optional[Union[dict, str]]) -> Optional[Union[dict, str]]:
@@ -392,7 +392,7 @@ def validate_date_range(date_range: Optional[Union[dict, str]]) -> Optional[tupl
                 raise InvalidParameterError(
                     f"date_range JSON 解析失败: {e}",
                     suggestion='请使用正确的JSON格式: {"start": "YYYY-MM-DD", "end": "YYYY-MM-DD"}'
-                )
+                ) from e
         # 2. 检查是否是单日字符串格式 YYYY-MM-DD
         elif len(stripped) == 10 and stripped[4] == '-' and stripped[7] == '-':
             try:
@@ -402,7 +402,7 @@ def validate_date_range(date_range: Optional[Union[dict, str]]) -> Optional[tupl
                 raise InvalidParameterError(
                     f"日期格式错误: {stripped}",
                     suggestion="请使用 YYYY-MM-DD 格式，例如: 2025-10-11"
-                )
+                ) from None
         # 3. 尝试自然语言解析
         else:
             try:
@@ -423,7 +423,7 @@ def validate_date_range(date_range: Optional[Union[dict, str]]) -> Optional[tupl
                 raise InvalidParameterError(
                     f"日期解析失败: {stripped}",
                     suggestion="支持格式: YYYY-MM-DD, {\"start\": \"...\", \"end\": \"...\"}, 或自然语言（今天、本周、最近7天等）"
-                )
+                ) from None
 
     if not isinstance(date_range, dict):
         raise InvalidParameterError(

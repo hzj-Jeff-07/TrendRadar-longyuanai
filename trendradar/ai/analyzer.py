@@ -607,8 +607,9 @@ class AIAnalyzer:
                 if isinstance(repaired, dict):
                     data = repaired
                     logger.info("[AI] JSON 本地修复成功（json_repair）")
-            except Exception:
-                pass
+            except Exception as repair_err:
+                # 本地修复失败不致命，后续由 analyze 的重试机制兜底
+                logger.debug(f"[AI] json_repair 本地修复失败: {repair_err}")
 
         # 两步都失败，记录错误（后续由 analyze 方法的重试机制处理）
         if data is None:

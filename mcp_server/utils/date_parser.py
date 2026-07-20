@@ -186,7 +186,7 @@ class DateParser:
                 raise InvalidParameterError(
                     f"无效的日期: {date_query}",
                     suggestion=f"日期值错误: {str(e)}"
-                )
+                ) from e
 
         # 7. 尝试解析中文日期：MM月DD日 或 YYYY年MM月DD日
         cn_date_match = re.match(r'(?:(\d{4})年)?(\d{1,2})月(\d{1,2})日', date_query)
@@ -211,7 +211,7 @@ class DateParser:
                 raise InvalidParameterError(
                     f"无效的日期: {date_query}",
                     suggestion=f"日期值错误: {str(e)}"
-                )
+                ) from e
 
         # 8. 尝试解析斜杠格式：YYYY/MM/DD 或 MM/DD
         slash_date_match = re.match(r'(?:(\d{4})/)?(\d{1,2})/(\d{1,2})', date_query)
@@ -234,7 +234,7 @@ class DateParser:
                 raise InvalidParameterError(
                     f"无效的日期: {date_query}",
                     suggestion=f"日期值错误: {str(e)}"
-                )
+                ) from e
 
         # 如果所有格式都不匹配
         raise InvalidParameterError(

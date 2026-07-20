@@ -648,7 +648,7 @@ class TrendAnalysisMixin:
                 raise DataNotFoundError(
                     "未找到今天的数据",
                     suggestion="请等待爬虫任务完成"
-                )
+                ) from None
 
             # 预测潜力话题
             predicted_topics = []
